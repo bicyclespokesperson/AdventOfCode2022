@@ -6,7 +6,7 @@ data Shape = Rock | Paper | Scissors
     deriving (Bounded, Eq, Enum, Show)
 
 data Outcome = Win | Draw | Loss
-    deriving Show
+    deriving (Show, Eq)
 
 class (Eq a, Enum a, Bounded a) => CyclicEnum a where
     cpred :: a -> a
@@ -23,15 +23,26 @@ instance CyclicEnum Shape
 
 -- This could be read?
 toShape :: Char -> Shape
-toShape c | c == 'A' || c == 'X' = Rock
-          | c == 'B' || c == 'Y' = Paper
-          | c == 'C' || c == 'Z' = Scissors
+toShape c | c == 'A' = Rock
+          | c == 'B' = Paper
+          | c == 'C' = Scissors
+
+toOutcome :: Char -> Outcome
+toOutcome c | c == 'X' = Loss
+            | c == 'Y' = Draw
+            | c == 'Z' = Win
 
 battle :: Shape -> Shape -> Outcome
 battle playerShape oppShape 
     | playerShape == oppShape = Draw
     | cpred playerShape == oppShape = Win
     | otherwise = Loss
+
+inverseBattle :: Shape -> Outcome -> Shape
+inverseBattle oppShape result
+    | result == Win = csucc oppShape
+    | result == Loss = cpred oppShape
+    | otherwise = oppShape
 
 scoreSh :: Shape -> Int
 scoreSh Rock = 1
@@ -46,15 +57,15 @@ scoreOt Win = 6
 score :: Shape -> Outcome -> Int
 score shp result = scoreSh shp + scoreOt result
 
-lineToShapes :: String -> (Shape, Shape)
-lineToShapes l = (toShape (head l), toShape (head (dropWhile (== ' ') (tail l))))
+lineToShapeResult :: String -> (Shape, Outcome)
+lineToShapeResult l = (toShape (head l), toOutcome (head (dropWhile (== ' ') (tail l))))
 
-readInputData :: String -> IO [(Shape, Shape)]
+readInputData :: String -> IO [(Shape, Outcome)]
 readInputData filename = do
     moveList <- lines <$> readFile filename
-    return (map lineToShapes moveList)
+    return (map lineToShapeResult moveList)
 
 main :: IO ()
 main = do
     battles <- readInputData "input.txt"
-    print $ sum $ map (\(oppChoice, plChoice) -> score plChoice (battle plChoice oppChoice)) battles
+    print $ sum $ map (\(oppChoice, result) -> score (inverseBattle oppChoice result) result) battles
