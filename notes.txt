@@ -1,0 +1,5 @@
+Haskell Advent of Code tricks
+https://wjwh.eu/posts/2022-11-30-haskell-aoc-tricks.html
+
+Solutions on reddit
+https://www.reddit.com/r/haskell/comments/zc108l/advent_of_code_2022_day_4/
