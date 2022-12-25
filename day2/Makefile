@@ -1,15 +1,13 @@
+COMPILER := ghc-9.2.5
+SRCS := $(wildcard *.hs)
 
-# Compiler to use
-GHC = ghc-9.2.5
+Runner: $(SRCS)
+	$(COMPILER) -o $@ $(SRCS)
 
-# Flags to pass to the compiler
-GHC_FLAGS = -O2
+.PHONY: run
+run: Runner
+	./$<
 
-# Rule for building object files from source files
-all:
-	$(GHC) $(GHC_FLAGS) RockPaperScissors.hs
-
-# Clean target
 .PHONY: clean
 clean:
-	rm -f $(TARGET) $(OBJECTS)
+	rm -f *.o *.hi Runner
