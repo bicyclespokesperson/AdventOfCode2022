@@ -2,28 +2,24 @@ import Control.Monad.Cont (cont)
 import Data.Bifunctor (bimap)
 import Data.Char (isDigit)
 import qualified Data.List as L
+import GHC.Exts.Heap (GenClosure(key))
+
+data Range where
+  Range :: {start :: Int, end :: Int} -> Range
+  deriving (Show, Eq)
 
 split :: String -> Char -> [String]
-split [] _ = []
 split s ch =
   let (prefix, rest) = break (== ch) s
    in case rest of
-        [] -> prefix : split rest ch
+        [] -> [prefix]
         x:xs -> prefix : split (tail rest) ch
 
 readInputData :: String -> IO [(Range, Range)]
 readInputData filename = do
   contents <- lines <$> readFile filename
-  let toTuple lineLs = (head lineLs, head (tail lineLs))
-  let x = map (toTuple . (`split` ',')) contents
-  return (map (bimap toRange toRange) x)
-
-data Range =
-  Range
-    { start :: Int
-    , end :: Int
-    }
-  deriving (Show, Eq)
+  let tups = map ((\[a, b] -> (a, b)) . (`split` ',')) contents
+  return (map (bimap toRange toRange) tups)
 
 contains :: Range -> Range -> Bool
 contains r1 r2 = start r1 <= start r2 && end r1 >= end r2
