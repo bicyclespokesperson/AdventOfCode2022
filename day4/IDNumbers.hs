@@ -5,7 +5,10 @@ import qualified Data.List as L
 import GHC.Exts.Heap (GenClosure(key))
 
 data Range where
-  Range :: {start :: Int, end :: Int} -> Range
+  Range
+    :: { start :: Int
+       , end :: Int}
+    -> Range
   deriving (Show, Eq)
 
 split :: String -> Char -> [String]
