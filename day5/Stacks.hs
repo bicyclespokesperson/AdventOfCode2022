@@ -1,3 +1,4 @@
+import Control.Monad.State
 import qualified Data.Char as C
 import Data.Foldable (toList)
 import qualified Data.Function as F
@@ -5,46 +6,52 @@ import Data.Sequence (fromList, mapWithIndex)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 
+type Stack = T.Text
+
+data Move =
+  Move
+    { count :: Int
+    , src :: Int
+    , dest :: Int
+    }
+
 startsWithDigit :: T.Text -> Bool
 startsWithDigit s
   | T.null s = False
   | otherwise = C.isDigit $ T.head s
-
-type Stack = T.Text
-
-type Move = [Int]
 
 readInputData :: T.Text -> IO ([Stack], [Move])
 readInputData filename = do
   contents <- T.lines <$> TIO.readFile (T.unpack filename)
   let (header, moves) = break (T.all C.isSpace) contents
       stacks =
-        map (T.reverse . T.tail) $
-        filter startsWithDigit $ map (T.reverse . T.strip) $ T.transpose header
+        map (T.reverse . T.tail) .
+        filter startsWithDigit . map (T.reverse . T.strip) $
+        T.transpose header
       toInts =
         map (\y -> read (T.unpack y) :: Int) . filter startsWithDigit . T.words
-      movesList = map toInts $ tail moves -- Drop the empty separator line
-      movesList' = map (\(x:xs) -> x : map (subtract 1) xs) movesList -- Subtract 1 to get 0-based list indices
-   in return (stacks, movesList')
+      movesList =
+        map ((\[c, s, d] -> Move c (s - 1) (d - 1)) . toInts) (tail moves)
+   in return (stacks, movesList)
 
 makeMoveOneByOne :: Move -> [Stack] -> [Stack]
-makeMoveOneByOne [x, y, z] s =
-  let f = makeMoveHelper [y, z]
-   in iterate f s !! x
+makeMoveOneByOne m s =
+  let f = makeMoveHelper m
+   in iterate f s !! count m
 
 makeMoveHelper :: Move -> [Stack] -> [Stack]
-makeMoveHelper [y, z] s =
+makeMoveHelper m s =
   let rule index st
-        | index == y = T.tail st
-        | index == z = T.cons (T.head (s !! y)) st
+        | index == src m = T.tail st
+        | index == dest m = T.cons (T.head (s !! src m)) st
         | otherwise = st
    in toList $ mapWithIndex rule $ fromList s
 
 makeMoveGrouped :: Move -> [Stack] -> [Stack]
-makeMoveGrouped [x, y, z] s =
+makeMoveGrouped m s =
   let rule index st
-        | index == y = T.drop x st
-        | index == z = T.take x (s !! y) <> st
+        | index == src m = T.drop (count m) st
+        | index == dest m = T.take (count m) (s !! src m) <> st
         | otherwise = st
    in toList $ mapWithIndex rule $ fromList s
 
