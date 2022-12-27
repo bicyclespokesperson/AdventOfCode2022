@@ -27,8 +27,21 @@ readInputData filename = do
       movesList' = map (\(x:xs) -> x : map (subtract 1) xs) movesList -- Subtract 1 to get 0-based list indices
    in return (stacks, movesList')
 
-makeMove :: Move -> [Stack] -> [Stack]
-makeMove [x, y, z] s =
+makeMoveOneByOne :: Move -> [Stack] -> [Stack]
+makeMoveOneByOne [x, y, z] s =
+  let f = makeMoveHelper [y, z]
+   in iterate f s !! x
+
+makeMoveHelper :: Move -> [Stack] -> [Stack]
+makeMoveHelper [y, z] s =
+  let rule index st
+        | index == y = T.tail st
+        | index == z = T.cons (T.head (s !! y)) st
+        | otherwise = st
+   in toList $ mapWithIndex rule $ fromList s
+
+makeMoveGrouped :: Move -> [Stack] -> [Stack]
+makeMoveGrouped [x, y, z] s =
   let rule index st
         | index == y = T.drop x st
         | index == z = T.take x (s !! y) <> st
@@ -38,7 +51,7 @@ makeMove [x, y, z] s =
 main :: IO ()
 main = do
   (stacks, moves) <- readInputData (T.pack "input.txt")
-  let moveFns = map makeMove moves
+  let moveFns = map makeMoveGrouped moves
   let endState = foldl (\startState f -> f startState) stacks moveFns
   let result = map T.head $ filter (not . T.null) endState
   print result
