@@ -24,13 +24,9 @@ readInputData filename = do
    in return (stacks, movesList')
 
 makeMove :: Move -> [Stack] -> [Stack]
-makeMove [x, y, z] s = let f = makeMoveHelper [y, z]
-                         in iterate f s !! x
-
-makeMoveHelper :: Move -> [Stack] -> [Stack]
-makeMoveHelper [y, z] s = let rule index st
-                                             | index == y = T.tail st
-                                             | index == z = T.cons (T.head (s !! y)) st
+makeMove [x, y, z] s = let rule index st
+                                             | index == y = T.drop x st
+                                             | index == z = T.take x (s !! y) <> st
                                              | otherwise = st
                                          in toList $ mapWithIndex rule $ fromList s
 
