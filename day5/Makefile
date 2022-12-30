@@ -1,5 +1,5 @@
 COMPILER := ghc-9.2.5
-SRCS := $(wildcard *.hs)
+SRCS := Stacks.hs
 
 Runner: $(SRCS)
 	$(COMPILER) -o $@ $(SRCS)
