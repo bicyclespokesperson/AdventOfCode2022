@@ -1,5 +1,6 @@
 import Control.Monad.State
 import qualified Data.List as L
+import Data.Functor (($>))
 import qualified Data.Map as M
 import qualified Data.Maybe as MB
 import qualified Data.Text as T
@@ -18,12 +19,8 @@ lsPrefix = T.pack "$ ls"
 parseLine ::
      M.Map [T.Text] Integer -> T.Text -> State [T.Text] (M.Map [T.Text] Integer)
 parseLine fileSizes cmd
-  | cdHome == cmd = do
-    put [T.pack "/"]
-    return fileSizes
-  | cdUp == cmd = do
-    modify tail
-    return fileSizes
+  | cdHome == cmd = put [T.pack "/"] $> fileSizes
+  | cdUp == cmd = modify tail $> fileSizes
   | T.isPrefixOf cdPrefix cmd = do
     let dir =
           reverse . T.splitOn (T.pack "/") . MB.fromJust $
