@@ -14,7 +14,7 @@ lsPrefix = T.pack "$ ls"
 parseLine :: T.Text -> M.Map [T.Text] Integer -> State [T.Text] (M.Map [T.Text] Integer)
 parseLine cmd fileSizes
   | cdHome == cmd = do
-    put []
+    put [T.pack "/"]
     return fileSizes
   | cdUp == cmd = do
     modify tail -- The state is a list of directories, with the first elem being the lowest level
@@ -36,9 +36,25 @@ parseLine cmd fileSizes
             return $ M.insert fullPath size fileSizes
         Nothing -> return fileSizes -- Ignore directories for now
 
+
+
+toDirectorySizes :: M.Map [T.Text] Integer -> M.Map T.Text Integer
+toDirectorySizes fileSizes = let result = M.empty
+                                 --TODO: Use tails to find all the directories that should go in the map
+                                 --      Might want insertWith or something as well, to automatically sum file sizes
+                              in result
+
+f :: ([[T.Text]], Integer) -> M.Map [T.Text] Integer -> M.Map [T.Text] Integer
+f (dirs, sz) m = let g dir = M.insertWith (+) dir sz
+                  in foldl (flip g) m dirs
+
 main :: IO ()
 main = do
-  contents <- T.lines <$> TIO.readFile "sample_input.txt"
-  let f = flip parseLine
-  let (fileSizes, _) = runState (foldM f (M.empty :: M.Map [T.Text] Integer) contents) []
-  print fileSizes
+  contents <- T.lines <$> TIO.readFile "input.txt"
+  let (fileSizes, _) = runState (foldM (flip parseLine) M.empty contents) [T.pack "/"]
+  let x1 = M.toList fileSizes
+  let x2 = map (\(a, b) -> (filter (not . null) $ map tail $ filter (not . null) $ L.tails a, b)) x1
+  let dirSizes = M.toList $ foldl (flip f) M.empty x2
+  let result = sum . filter (<= 100000) $ map snd dirSizes
+
+  print result
