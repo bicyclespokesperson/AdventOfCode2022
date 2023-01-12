@@ -48,13 +48,29 @@ f :: ([[T.Text]], Integer) -> M.Map [T.Text] Integer -> M.Map [T.Text] Integer
 f (dirs, sz) m = let g dir = M.insertWith (+) dir sz
                   in foldl (flip g) m dirs
 
-main :: IO ()
-main = do
+part1 :: IO ()
+part1 = do
   contents <- T.lines <$> TIO.readFile "input.txt"
   let (fileSizes, _) = runState (foldM (flip parseLine) M.empty contents) [T.pack "/"]
   let x1 = M.toList fileSizes
   let x2 = map (\(a, b) -> (filter (not . null) $ map tail $ filter (not . null) $ L.tails a, b)) x1
   let dirSizes = M.toList $ foldl (flip f) M.empty x2
   let result = sum . filter (<= 100000) $ map snd dirSizes
-
   print result
+
+part2 :: IO ()
+part2 = do
+  contents <- T.lines <$> TIO.readFile "input.txt"
+  let (fileSizes, _) = runState (foldM (flip parseLine) M.empty contents) [T.pack "/"]
+  let x1 = M.toList fileSizes
+  let x2 = map (\(a, b) -> (filter (not . null) $ map tail $ filter (not . null) $ L.tails a, b)) x1
+  let dirSizes = foldl (flip f) M.empty x2
+  let totalSpace = 70000000
+  let neededSpace = 30000000
+  let usedSpace = dirSizes M.! [T.pack "/"]
+  let target = neededSpace - (totalSpace - usedSpace)
+  let result = foldr1 min . filter (>= target) . map snd $ M.toList dirSizes
+  print result
+
+main :: IO ()
+main = part2
