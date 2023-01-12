@@ -3,40 +3,34 @@ import qualified Data.Maybe as MB
 import qualified Data.List as L
 import qualified Data.Map as M
 import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 
-cdPrefix = T.pack "$ cd" :: T.Text
-lsPrefix = T.pack "$ ls" :: T.Text
+cdHome = T.pack "$ cd /"
+cdPrefix = T.pack "$ cd"
+lsPrefix = T.pack "$ ls"
 
-parseLine ::
-     T.Text -> M.Map [T.Text] Integer -> State [T.Text] (M.Map [T.Text] Integer)
+parseLine :: T.Text -> M.Map [T.Text] Integer -> State [T.Text] (M.Map [T.Text] Integer)
 parseLine cmd fileSizes
+  | cdHome == cmd = do
+    put []
+    return fileSizes
   | T.isPrefixOf cdPrefix cmd = do
-    let dir = T.splitOn (T.pack ",") . MB.fromJust $ T.stripPrefix cdPrefix cmd
-    curr <- get
-    put (dir : curr)
+    let dir = reverse .T.splitOn (T.pack "/") . MB.fromJust $ T.stripPrefix cdPrefix cmd
+    modify (dir ++)
     return fileSizes
   | T.isPrefixOf lsPrefix cmd = do
-    let dir = cmd
-    curr <- get
-    put (dir : curr)
     return fileSizes
+  | T.null cmd = do
+    return fileSizes
+  | otherwise = do
+    let (sz, name) = T.break (/= ' ') cmd
+    curr <- get
+    let fullPath = name : curr
+    return $ M.insert fullPath (read (T.unpack sz) :: Integer) fileSizes
 
-{-
-parseLine3 :: [T.Text] -> M.Map [T.Text] Integer -> State [T.Text] (M.Map [T.Text] Integer)
-parseLine3 cmd fileSizes = do
-                                curr <- get
-                                put cmd : curr
-                                return fileSizes
--}
-{-
--- I need several functions that return a State. No functions will accept a state as a parameter
-parseLine :: [T.Text] -> State (T.Text, M.Map [T.Text] Integer) ()
-parseLine ("$":_) = do 
-    let x = 5
-    let y = M.fromList [([""], 3)]
-    put ("test", y)
-    return ()
-    -}
 main :: IO ()
 main = do
-  print "test"
+  contents <- T.lines <$> TIO.readFile "sample_input.txt"
+  let f = flip parseLine
+  let (fileSizes, _) = runState (foldM f (M.empty :: M.Map [T.Text] Integer) contents) []
+  print fileSizes
