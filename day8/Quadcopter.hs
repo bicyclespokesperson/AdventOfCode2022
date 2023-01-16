@@ -29,15 +29,19 @@ findEdge ::
      M.Map (Int, Int) Int -> ((Int, Int) -> (Int, Int)) -> (Int, Int) -> Bool
 findEdge mp dirFn coord =
   let height = mp M.! coord
-      f cc dist =
+      loop cc dist =
         case M.lookup cc mp of
-          (Just h) -> h < height && f (dirFn cc) (dist + 1)
+          (Just h) -> h < height && loop (dirFn cc) (dist + 1)
           Nothing -> True
-   in f (dirFn coord) 0
+   in loop (dirFn coord) 0
+
+part1 :: IO ()
+part1 = do
+  grid <- readInputData "input.txt"
+  let findEdgeAllDirs = map (findEdge grid) [left, right, up, down]
+  let isVisible coord = any ($ coord) findEdgeAllDirs
+  let res = M.foldrWithKey (\coord _ count -> count + if isVisible coord then 1 else 0) 0 grid
+  print res
 
 main :: IO ()
-main = do
-  grid <- readInputData "sample_input.txt"
-  let coord = (1, 3)
-  print $ grid M.! up coord
-  print $ findEdge grid up coord
+main = part1
