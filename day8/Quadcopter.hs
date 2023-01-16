@@ -25,9 +25,11 @@ left (i, j) = (i, j - 1)
 right :: (Int, Int) -> (Int, Int)
 right (i, j) = (i, j + 1)
 
-findEdge1 ::
+-- There's probably a faster way to accomplish part 1; this version examines
+-- each Tree index multiple times for each direction.
+findEdge ::
      M.Map (Int, Int) Int -> ((Int, Int) -> (Int, Int)) -> (Int, Int) -> Bool
-findEdge1 mp dirFn coord =
+findEdge mp dirFn coord =
   let height = mp M.! coord
       loop cc =
         case M.lookup cc mp of
@@ -35,9 +37,9 @@ findEdge1 mp dirFn coord =
           Nothing -> True
    in loop (dirFn coord)
 
-findEdge2 ::
+countVisible ::
      M.Map (Int, Int) Int -> ((Int, Int) -> (Int, Int)) -> (Int, Int) -> Int
-findEdge2 mp dirFn coord =
+countVisible mp dirFn coord =
   let height = mp M.! coord
       loop cc dist =
         case M.lookup cc mp of
@@ -48,20 +50,19 @@ findEdge2 mp dirFn coord =
 part1 :: IO ()
 part1 = do
   grid <- readInputData "input.txt"
-  let findEdgeAllDirs = map (findEdge1 grid) [left, right, up, down]
+  let findEdgeAllDirs = map (findEdge grid) [left, right, up, down]
   let isVisible coord = any ($ coord) findEdgeAllDirs
-  let res = M.foldrWithKey (\coord _ count -> count + if isVisible coord then 1 else 0) 0 grid
-  print res
+  let result = M.foldrWithKey (\coord _ count -> count + fromEnum (isVisible coord)) 0 grid
+  print result
 
 part2 :: IO ()
 part2 = do
   grid <- readInputData "input.txt"
-  print $ findEdge2 grid right (1, 2)
-  print $ findEdge2 grid down (1, 2)
-  let findEdgeAllDirs = map (findEdge2 grid) [left, right, up, down]
-  let scenicScore coord = product $ map ($ coord) findEdgeAllDirs
-  let res = M.foldrWithKey (\coord _ score -> max score (scenicScore coord)) (0 :: Int) grid
-  print res
+  let countVisibleAllDirs = map (countVisible grid) [left, right, up, down]
+  let scenicScore coord = product $ map ($ coord) countVisibleAllDirs
+  let scenicScore' coord = product $ sequenceA countVisibleAllDirs coord
+  let result = M.foldrWithKey (\coord _ score -> max score (scenicScore coord)) 0 grid
+  print result
 
 main :: IO ()
 main = part2
