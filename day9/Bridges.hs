@@ -34,21 +34,22 @@ readInputData filename = concatMap parseLine . lines <$> readFile filename
 
 -- (x,y) is head location, (a,b) is tail location
 tailLocation :: (Int, Int) -> (Int, Int) -> (Int, Int)
-tailLocation (x, y) (a, b) | (abs x - a) <= 1 && (abs y - b) <= 1 = (a, b)
+tailLocation (x, y) (a, b) | abs (x - a) <= 1 && abs (y - b) <= 1 = (a, b)
                            | (x - a == -2) && (y == b) = (a-1, b)
                            | (x - a == 2) && (y == b) = (a+1, b)
                            | (y - b == -2) && (x == a) = (a, b-1)
                            | (y - b == 2) && (x == a) = (a, b+1)
-                           | x <= a && y <= b = (a-1, b-1)
-                           | x <= a && y >= b = (a-1, b+1)
-                           | x >= a && y <= b = (a+1, b-1)
-                           | x >= a && y >= b = (a+1, b+1)
+                           | x < a && y < b = (a-1, b-1)
+                           | x < a && y > b = (a-1, b+1)
+                           | x > a && y < b = (a+1, b-1)
+                           | x > a && y > b = (a+1, b+1)
 
 main :: IO ()
 main = do
-          headMoves <- readInputData "sample_input.txt"
+          headMoves <- readInputData "input.txt"
           let headLocations = reverse $ foldl' (\coords mv -> makeMove (head coords) mv : coords) [(0, 0)] headMoves
           let tailLocations = reverse $ foldl' (\acc headLoc -> tailLocation headLoc (head acc) : acc) [(0, 0)] (tail headLocations)
-          print headMoves
-          print headLocations
-          print tailLocations
+          --print headMoves
+          --print headLocations
+          --print tailLocations
+          print . S.size $ S.fromList tailLocations
