@@ -44,12 +44,12 @@ tailLocation (x, y) (a, b) | abs (x - a) <= 1 && abs (y - b) <= 1 = (a, b)
                            | x > a && y < b = (a+1, b-1)
                            | x > a && y > b = (a+1, b+1)
 
+tailLocations :: [(Int, Int)] -> [(Int, Int)]
+tailLocations = reverse . foldl' (\acc headLoc -> tailLocation headLoc (head acc) : acc) [(0, 0)]
+
 main :: IO ()
 main = do
           headMoves <- readInputData "input.txt"
           let headLocations = reverse $ foldl' (\coords mv -> makeMove (head coords) mv : coords) [(0, 0)] headMoves
-          let tailLocations = reverse $ foldl' (\acc headLoc -> tailLocation headLoc (head acc) : acc) [(0, 0)] (tail headLocations)
-          --print headMoves
-          --print headLocations
-          --print tailLocations
-          print . S.size $ S.fromList tailLocations
+          let allTailLocations = iterate tailLocations headLocations !! 9 -- Set this to 1 for part 1
+          print . S.size $ S.fromList allTailLocations
