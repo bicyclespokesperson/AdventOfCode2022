@@ -50,9 +50,7 @@ tailLocation (x, y) (a, b)
   | x > a && y > b = (a + 1, b + 1)
 
 tailLocations :: [(Int, Int)] -> [(Int, Int)]
-tailLocations =
-  reverse .
-  foldl' (\acc headLoc -> tailLocation headLoc (head acc) : acc) [(0, 0)]
+tailLocations = scanl (flip tailLocation) (0, 0)
 
 main :: IO ()
 main = do
