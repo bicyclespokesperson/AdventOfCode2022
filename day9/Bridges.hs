@@ -1,4 +1,5 @@
 import qualified Data.Set as S
+import Data.Foldable (foldl')
 
 -- Left and Right are prelude functions, so disambiguate with *Move
 data Move = UpMove | DownMove | LeftMove | RightMove
@@ -31,12 +32,23 @@ parseLine s = let [dir, count] = words s
 readInputData :: String -> IO [Move]
 readInputData filename = concatMap parseLine . lines <$> readFile filename
 
-tailLocation :: (Int, Int) -> (Int, Int) -> Move -> (Int, Int)
-tailLocation headLoc tailLoc mv = (3, 4)
+-- (x,y) is head location, (a,b) is tail location
+tailLocation :: (Int, Int) -> (Int, Int) -> (Int, Int)
+tailLocation (x, y) (a, b) | (abs x - a) <= 1 && (abs y - b) <= 1 = (a, b)
+                           | (x - a == -2) && (y == b) = (a-1, b)
+                           | (x - a == 2) && (y == b) = (a+1, b)
+                           | (y - b == -2) && (x == a) = (a, b-1)
+                           | (y - b == 2) && (x == a) = (a, b+1)
+                           | x <= a && y <= b = (a-1, b-1)
+                           | x <= a && y >= b = (a-1, b+1)
+                           | x >= a && y <= b = (a+1, b-1)
+                           | x >= a && y >= b = (a+1, b+1)
 
 main :: IO ()
 main = do
           headMoves <- readInputData "sample_input.txt"
-          let headLocations = reverse $ foldr (\mv coords -> makeMove (head coords) mv : coords) [(0, 0)] (reverse headMoves)
+          let headLocations = reverse $ foldl' (\coords mv -> makeMove (head coords) mv : coords) [(0, 0)] headMoves
+          let tailLocations = reverse $ foldl' (\acc headLoc -> tailLocation headLoc (head acc) : acc) [(0, 0)] (tail headLocations)
           print headMoves
           print headLocations
+          print tailLocations
