@@ -6,3 +6,4 @@ Working on some [Advent of Code](https://adventofcode.com/) problems to get bett
 - [r/haskell collection of solutions](https://www.reddit.com/r/haskell/collection/f33c01f9-fb10-4e64-90a6-7dc07fb03e2d)
 - [Haskell Advent of Code tricks](https://wjwh.eu/posts/2022-11-30-haskell-aoc-tricks.html)
 - [Blog about some solutions](https://work.njae.me.uk/tag/advent-of-code/)
+- [Megaparsec tutorial](https://markkarpov.com/tutorial/megaparsec.html)
