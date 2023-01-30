@@ -9,6 +9,8 @@ import Text.Megaparsec.Char.Lexer (decimal)
 import Data.Void (Void)
 import qualified Data.Sequence as S
 import qualified Text.Megaparsec.Char.Lexer as L
+import Data.Functor (($>))
+
 
 --import Text.Megaparsec.String
 
@@ -42,26 +44,12 @@ parseMathSymbol = choice [
   (*) <$ char '*',
   div <$ char '/']
 
-
-{-
-parseFn :: Parser (Int -> Int)
-parseFn = a <|> b where
-    a = (do num <- L.decimal 
-            pure (`op` num))
-    b = (do num <- L.decimal 
-            pure (`op` num))
--}
 parseFn :: (Int -> Int -> Int) -> Parser (Int -> Int)
-parseFn op = a <|> b where
-             a = do 
-                  num <- L.decimal 
-                  pure (`op` num)
-             b = do 
-                  _ <- string "old"
-                  pure (\x -> x `op` x)
+parseFn op = a <|> b
+  where
+    a = L.decimal >>= (\num -> pure (`op` num))
+    b = string "old" $> (\x -> x `op` x)
 
-
--- TODO: Support old * old
 parseOperation :: Parser (Int -> Int)
 parseOperation = do
         _ <- string "Operation: new = old "
@@ -85,17 +73,17 @@ parseFalseBehavior = string "If false: throw to monkey " *> L.decimal
 parseMonkey :: Parser Monkey
 parseMonkey = do
   _ <- string "Monkey " *> some digitChar
-  _ <- string ":" *> newline *> space *> string "Starting items: "
+  _ <- string ":" *> space *> string "Starting items: "
   items <- S.fromList <$> intList
-  _ <- newline *> space
+  _ <- space
   operation <- parseOperation
-  _ <- newline *> space
+  _ <- space
   test <- parseEndTest
-  _ <- newline *> space
+  _ <- space
   trueTarget <- parseTrueBehavior
-  _ <- newline *> space
+  _ <- space
   falseTarget <- parseFalseBehavior
-  _ <- newline *> space
+  _ <- space
   return Monkey {..}
 
 main :: IO ()
@@ -103,4 +91,4 @@ main = do
   contents <- readFile "sample_input.txt"
   case runParser (many parseMonkey) "filename_for_error_message.txt" contents of
       Left e -> putStr (errorBundlePretty e)
-      Right r -> print (items (r !! 3))
+      Right r -> print (items (r !! 2))
