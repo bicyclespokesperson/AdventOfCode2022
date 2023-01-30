@@ -18,7 +18,9 @@ type Parser = Parsec Void String
 data Monkey = Monkey {
     items :: S.Seq Int,
     operation :: Int -> Int,
-    test :: Int -> Bool
+    test :: Int -> Bool,
+    trueTarget :: Int,
+    falseTarget :: Int
 };
 
 -- parse a single integer
@@ -41,25 +43,47 @@ parseMathSymbol = choice [
   div <$ char '/']
 
 
+{-
+parseFn :: Parser (Int -> Int)
+parseFn = a <|> b where
+    a = (do num <- L.decimal 
+            pure (`op` num))
+    b = (do num <- L.decimal 
+            pure (`op` num))
+-}
+parseFn :: (Int -> Int -> Int) -> Parser (Int -> Int)
+parseFn op = a <|> b where
+             a = do 
+                  num <- L.decimal 
+                  pure (`op` num)
+             b = do 
+                  _ <- string "old"
+                  pure (\x -> x `op` x)
+
+
 -- TODO: Support old * old
 parseOperation :: Parser (Int -> Int)
 parseOperation = do
         _ <- string "Operation: new = old "
         op <- parseMathSymbol
         _ <- space
-        num <- L.decimal
-        pure (`op` num)
+        parseFn op
 
 parseEndTest :: Parser (Int -> Bool)
 parseEndTest = do
         _ <- string "Test: divisible by "
         divisor <- L.decimal
         pure (\x -> mod x divisor == 0)
-        
+
+parseTrueBehavior :: Parser Int
+parseTrueBehavior = string "If true: throw to monkey " *> L.decimal
+
+parseFalseBehavior :: Parser Int
+parseFalseBehavior = string "If false: throw to monkey " *> L.decimal
 
 -- Parser for the input format
-parseInput :: Parser Monkey
-parseInput = do
+parseMonkey :: Parser Monkey
+parseMonkey = do
   _ <- string "Monkey " *> some digitChar
   _ <- string ":" *> newline *> space *> string "Starting items: "
   items <- S.fromList <$> intList
@@ -67,17 +91,16 @@ parseInput = do
   operation <- parseOperation
   _ <- newline *> space
   test <- parseEndTest
-  _ <- newline
-  --TODO: True and False behavior
+  _ <- newline *> space
+  trueTarget <- parseTrueBehavior
+  _ <- newline *> space
+  falseTarget <- parseFalseBehavior
+  _ <- newline *> space
   return Monkey {..}
-
--- Example usage
-exampleInput :: String
-exampleInput = "Monkey 0:\n  Starting items: 79, 98"
 
 main :: IO ()
 main = do
   contents <- readFile "sample_input.txt"
-  case runParser parseInput "filename_for_error_message.txt" contents of
+  case runParser (many parseMonkey) "filename_for_error_message.txt" contents of
       Left e -> putStr (errorBundlePretty e)
-      Right r -> print (items r)
+      Right r -> print (items (r !! 3))
