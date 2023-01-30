@@ -22,8 +22,8 @@ data Monkey = Monkey {
 };
 
 -- parse a list of integers separated by commas
-intList :: Parser [Int]
-intList = decimal `sepBy` string ", "
+parseIntList :: Parser [Int]
+parseIntList = decimal `sepBy` string ", "
 
 parseMathSymbol :: Parser (Int -> Int -> Int)
 parseMathSymbol = choice [
@@ -37,7 +37,8 @@ parseOperation = do
         _ <- string "Operation: new = old "
         op <- parseMathSymbol
         _ <- space
-        (L.decimal >>= (\num -> pure (`op` num))) <|> (string "old" $> (\x -> x `op` x))
+        (L.decimal >>= (\num -> pure (`op` num))) <|> 
+          (string "old" $> (\x -> x `op` x))
 
 parseEndTest :: Parser (Int -> Bool)
 parseEndTest = do
@@ -45,12 +46,11 @@ parseEndTest = do
         divisor <- L.decimal
         pure (\x -> mod x divisor == 0)
 
--- Parser for the input format
 parseMonkey :: Parser Monkey
 parseMonkey = do
   _ <- string "Monkey " *> some digitChar
   _ <- string ":" *> space *> string "Starting items: "
-  items <- S.fromList <$> intList
+  items <- S.fromList <$> parseIntList
   _ <- space
   operation <- parseOperation
   _ <- space
