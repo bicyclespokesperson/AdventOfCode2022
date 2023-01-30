@@ -11,10 +11,6 @@ import qualified Data.Sequence as S
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Functor (($>))
 
-
---import Text.Megaparsec.String
-
-
 type Parser = Parsec Void String
 
 data Monkey = Monkey {
@@ -25,17 +21,9 @@ data Monkey = Monkey {
     falseTarget :: Int
 };
 
--- parse a single integer
-int :: Parser Int
-int = decimal
-
 -- parse a list of integers separated by commas
 intList :: Parser [Int]
-intList = int `sepBy` string ", "
-
--- Parser for a single number
-numberParser :: Parser Int
-numberParser = read <$> some digitChar
+intList = decimal `sepBy` string ", "
 
 parseMathSymbol :: Parser (Int -> Int -> Int)
 parseMathSymbol = choice [
@@ -44,30 +32,18 @@ parseMathSymbol = choice [
   (*) <$ char '*',
   div <$ char '/']
 
-parseFn :: (Int -> Int -> Int) -> Parser (Int -> Int)
-parseFn op = a <|> b
-  where
-    a = L.decimal >>= (\num -> pure (`op` num))
-    b = string "old" $> (\x -> x `op` x)
-
 parseOperation :: Parser (Int -> Int)
 parseOperation = do
         _ <- string "Operation: new = old "
         op <- parseMathSymbol
         _ <- space
-        parseFn op
+        (L.decimal >>= (\num -> pure (`op` num))) <|> (string "old" $> (\x -> x `op` x))
 
 parseEndTest :: Parser (Int -> Bool)
 parseEndTest = do
         _ <- string "Test: divisible by "
         divisor <- L.decimal
         pure (\x -> mod x divisor == 0)
-
-parseTrueBehavior :: Parser Int
-parseTrueBehavior = string "If true: throw to monkey " *> L.decimal
-
-parseFalseBehavior :: Parser Int
-parseFalseBehavior = string "If false: throw to monkey " *> L.decimal
 
 -- Parser for the input format
 parseMonkey :: Parser Monkey
@@ -80,9 +56,9 @@ parseMonkey = do
   _ <- space
   test <- parseEndTest
   _ <- space
-  trueTarget <- parseTrueBehavior
+  trueTarget <- string "If true: throw to monkey " *> L.decimal
   _ <- space
-  falseTarget <- parseFalseBehavior
+  falseTarget <- string "If false: throw to monkey " *> L.decimal
   _ <- space
   return Monkey {..}
 
