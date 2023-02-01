@@ -18,7 +18,7 @@ type Parser = Parsec Void String
 data Monkey = Monkey {
     items :: S.Seq Int,
     operation :: Int -> Int,
-    test :: Int -> Bool,
+    divisor :: Int,
     trueTarget :: Int,
     falseTarget :: Int,
     totalSeen :: Int
@@ -43,11 +43,11 @@ parseOperation = do
         (L.decimal >>= (\num -> pure (`op` num))) <|> 
           (string "old" $> (\x -> x `op` x))
 
-parseEndTest :: Parser (Int -> Bool)
+parseEndTest :: Parser Int
 parseEndTest = do
         _ <- string "Test: divisible by "
-        divisor <- L.decimal
-        pure (\x -> mod x divisor == 0)
+        L.decimal
+        --pure (\x -> mod x divisor == 0)
 
 parseMonkey :: Parser Monkey
 parseMonkey = do
@@ -57,7 +57,7 @@ parseMonkey = do
   _ <- space
   operation <- parseOperation
   _ <- space
-  test <- parseEndTest
+  divisor <- parseEndTest
   _ <- space
   trueTarget <- string "If true: throw to monkey " *> L.decimal
   _ <- space
@@ -86,7 +86,7 @@ inspectItem i ms = let monkey = (ms !! i)
                        itm = S.index (items monkey) 0
                        moreWorried = operation monkey itm
                        lessWorried = boredomAdjustment moreWorried
-                       target = (if test monkey lessWorried then trueTarget else falseTarget) monkey
+                       target = (if mod lessWorried (divisor monkey) == 0 then trueTarget else falseTarget) monkey
                     in switchItem i target lessWorried ms
 
 runRound' :: Int -> [Monkey] -> [Monkey]
