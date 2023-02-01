@@ -62,6 +62,14 @@ parseMonkey = do
   _ <- space
   return Monkey {..}
 
+pushItem :: Int -> Monkey -> Monkey
+pushItem val m = let newItems = (items m S.|> val) in m {items = newItems} 
+
+popItem :: Monkey -> (Monkey, Int)
+popItem m = case S.viewr (items m) of
+              S.EmptyR -> (m, -1) -- TODO: Should this be an error?
+              (rest S.:> end) -> (m {items = rest}, end)
+
 main :: IO ()
 main = do
   contents <- readFile "sample_input.txt"
