@@ -78,29 +78,30 @@ switchItem :: Int -> Int -> Int -> [Monkey] -> [Monkey]
 switchItem from to new ms = let (m, _) = popItem $ ms !! from 
                          in (element from .~ m) $ (element to .~ pushItem new (ms !! to)) ms
 
-boredomAdjustment :: Int -> Int
-boredomAdjustment itm = itm `div` 3
+inspectItem :: (Int -> Int) -> Int -> [Monkey] -> [Monkey]
+inspectItem adjFn i ms = let monkey = (ms !! i)
+                             itm = S.index (items monkey) 0
+                             moreWorried = operation monkey itm
+                             lessWorried = adjFn moreWorried
+                             target = (if mod lessWorried (divisor monkey) == 0 then trueTarget else falseTarget) monkey
+                          in switchItem i target lessWorried ms
 
-inspectItem :: Int -> [Monkey] -> [Monkey]
-inspectItem i ms = let monkey = (ms !! i)
-                       itm = S.index (items monkey) 0
-                       moreWorried = operation monkey itm
-                       lessWorried = boredomAdjustment moreWorried
-                       target = (if mod lessWorried (divisor monkey) == 0 then trueTarget else falseTarget) monkey
-                    in switchItem i target lessWorried ms
-
-runRound' :: Int -> [Monkey] -> [Monkey]
-runRound' i ms
+runRound' :: Int -> (Int -> Int) -> [Monkey] -> [Monkey]
+runRound' i adjFn ms
   | i >= length ms = ms
-  | null (items $ ms !! i) = runRound' (i + 1) ms
-  | otherwise = runRound' i $ inspectItem i ms
+  | null (items $ ms !! i) = runRound' (i + 1) adjFn ms
+  | otherwise = runRound' i adjFn $ inspectItem adjFn i ms
 
-runRound :: [Monkey] -> [Monkey]
+runRound :: (Int -> Int) -> [Monkey] -> [Monkey]
 runRound = runRound' 0
 
-calculateViews :: [Monkey] -> [Int]
-calculateViews ms = let states = take 21 $ iterate runRound ms
+-- Change 10001 to 21 for part 1
+calculateViews :: (Int -> Int) -> [Monkey] -> [Int]
+calculateViews adjFn ms = let states = take 10001 $ iterate (runRound adjFn) ms
                      in map totalSeen $ last states
+
+divisors :: [Monkey] -> Int
+divisors = product . map divisor
 
 main :: IO ()
 main = do
@@ -108,5 +109,8 @@ main = do
   case runParser (many parseMonkey) "filename_for_error_message.txt" contents of
       Left e -> putStr (errorBundlePretty e)
       Right monkeys -> do print $ map items monkeys
-                          print . map items $ runRound monkeys
-                          print $ product . take 2 . reverse . sort $ calculateViews monkeys
+                          let divs = divisors monkeys
+                          --let boredomAdjustment x = x `div` 3 -- part 1
+                          let boredomAdjustment x = mod x divs
+                          print divs
+                          print $ product . take 2 . reverse . sort $ calculateViews boredomAdjustment monkeys
