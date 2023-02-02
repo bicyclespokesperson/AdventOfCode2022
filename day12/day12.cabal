@@ -72,6 +72,8 @@ executable day12
                       containers ^>= 0.6.5,
                       lens ^>= 5.2,
                       megaparsec ^>= 9.3,
+                      monad-loops ^>= 0.4.3,
+                      mtl ^>= 2.2.2,
                       text ^>=1.2
                       
 
