@@ -67,11 +67,13 @@ executable day12
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:    base ^>=4.16.4.0,
+    build-depends:    array ^>= 0.5.4,
+                      base ^>=4.16.4.0,
                       containers ^>= 0.6.5,
+                      lens ^>= 5.2,
                       megaparsec ^>= 9.3,
-                      text ^>=1.2,
-                      lens ^>= 5.2
+                      text ^>=1.2
+                      
 
     -- Directories containing source files.
     hs-source-dirs:   bin
