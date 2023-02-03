@@ -75,12 +75,15 @@ runActions actions initialState start =
   foldl (\acc f -> concatMap (\x -> MS.evalStateT (f x) initialState) acc) [start] actions
     -}
 
+-- Should probably just write this recursively
+-- Worth making a simple example for combining MapM and State though
+
 fewestSteps' :: Grid2D Int -> Coord2 -> Coord2 -> [[Coord2]]
 fewestSteps' grid start end = let (min', max') = A.bounds grid
                                   f = neighbors' min' max' grid
                                   stepFn :: [Coord2] -> MS.State (S.Set Coord2) [Coord2]
                                   stepFn cur = let newNeighbors = mapM f cur in concat <$> newNeighbors
-                                  states = CML.iterateUntilM (\xs -> end `elem` xs) stepFn [start]
+                                  states = CML.iterateUntilM (\xs -> True) stepFn [start]
                                   (curr, _) = MS.runState states S.empty
                                 in [curr]
 
