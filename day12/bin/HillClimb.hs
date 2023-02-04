@@ -100,6 +100,7 @@ printHelper = traverse print
 
 --x = sequenceA
 
+{-
 main :: IO ()
 main = do
   contents <- readFile "sample_input.txt"
@@ -113,6 +114,30 @@ main = do
                       _ <- printHelper $ fewestSteps' grid start end
                       return ()
                       --print $ fewestSteps grid start end
+-}
+
+example :: MS.StateT Int Maybe Int
+example = do
+  x <- MS.get
+  MS.put (x + 1)
+  guard (x < 3)
+  return (x * 2)
+
+f :: Int -> MS.State [Int] Int
+f x = do
+        MS.modify (x:)
+        return $ x + 1
+
+
+main :: IO ()
+main = do
+          let t = f 1 >> f 2 >> f 3
+          let t' = fmap (*2) t
+          let (res, end) = MS.runState t' []
+          print (res, end)
+          let rr = MS.runState example 0
+          print rr
+
 
 
 -- list applicatives & BFS, similar to knights tour
