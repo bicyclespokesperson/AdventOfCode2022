@@ -74,7 +74,8 @@ executable day12
                       megaparsec ^>= 9.3,
                       monad-loops ^>= 0.4.3,
                       mtl ^>= 2.2.2,
-                      text ^>=1.2
+                      text ^>=1.2,
+                      transformers ^>= 0.5.6.2
                       
 
     -- Directories containing source files.
