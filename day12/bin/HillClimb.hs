@@ -31,24 +31,24 @@ parseDigitLine = fmap charToHeight <$> some letterChar
 neighbors :: Grid2D Int -> Coord2 -> [Coord2]
 neighbors grid (x, y) = do 
                             let ((xmin, ymin), (xmax, ymax)) = A.bounds grid
-                            (x', y') <- [(x+1, y), (x-1,y), (x, y+1), (x, y-1), (x, y)]
+                            (x', y') <- [(x+1, y), (x-1,y), (x, y+1), (x, y-1)]
                             _ <- guard (x' `elem` [xmin..xmax] && y' `elem` [ymin..ymax] && ((grid A.! (x', y')) - (grid A.! (x, y))) <= 1)
                             return (x', y')
 
 neighbors' :: Grid2D Int -> Coord2 -> [Coord2]
 neighbors' grid (x, y) = do 
                             let ((xmin, ymin), (xmax, ymax)) = A.bounds grid
-                            (x', y') <- [(x+1, y), (x-1,y), (x, y+1), (x, y-1), (x, y)]
+                            (x', y') <- [(x+1, y), (x-1,y), (x, y+1), (x, y-1)]
                             _ <- guard (x' `elem` [xmin..xmax] && y' `elem` [ymin..ymax] && ((grid A.! (x, y)) - (grid A.! (x', y'))) <= 1)
                             return (x', y')
 
 singleStep :: Grid2D Int -> S.Set Coord2 -> S.Set Coord2
-singleStep grid =  let neighbors'' = neighbors grid
-                    in S.foldl' (\a b -> S.union a (S.fromList $ neighbors'' b)) S.empty
+singleStep grid st =  let neighbors'' = neighbors grid
+                       in S.foldl' (\a b -> S.union a (S.fromList $ neighbors'' b)) st st
 
 singleStep' :: Grid2D Int -> S.Set Coord2 -> S.Set Coord2
-singleStep' grid =  let neighbors'' = neighbors' grid
-                    in S.foldl' (\a b -> S.union a (S.fromList $ neighbors'' b)) S.empty
+singleStep' grid st =  let neighbors'' = neighbors' grid
+                    in S.foldl' (\a b -> S.union a (S.fromList $ neighbors'' b)) st st
 
 find :: Grid2D Int -> Int -> Maybe Coord2
 find grid val = case filter (\(_, e) -> val == e) (A.assocs grid) of
@@ -66,8 +66,7 @@ fewestSteps grid start end = let g = singleStep grid
 fewestSteps' :: Grid2D Int -> Coord2 -> Int -> Int
 fewestSteps' grid start endVal = let g = singleStep' grid
                                      vals = iterate g $ S.fromList [start]
-                                     f val s = let x = S.map (grid A.!) s
-                                                in S.member val $ x
+                                     f val s =  S.member val $ S.map (grid A.!) s
                                   in length $ takeWhile (not . f endVal) vals
 
 part1 :: IO ()
