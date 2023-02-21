@@ -35,20 +35,40 @@ neighbors grid (x, y) = do
                             _ <- guard (x' `elem` [xmin..xmax] && y' `elem` [ymin..ymax] && ((grid A.! (x', y')) - (grid A.! (x, y))) <= 1)
                             return (x', y')
 
+neighbors' :: Grid2D Int -> Coord2 -> [Coord2]
+neighbors' grid (x, y) = do 
+                            let ((xmin, ymin), (xmax, ymax)) = A.bounds grid
+                            (x', y') <- [(x+1, y), (x-1,y), (x, y+1), (x, y-1), (x, y)]
+                            _ <- guard (x' `elem` [xmin..xmax] && y' `elem` [ymin..ymax] && ((grid A.! (x, y)) - (grid A.! (x', y'))) <= 1)
+                            return (x', y')
+
 singleStep :: Grid2D Int -> S.Set Coord2 -> S.Set Coord2
-singleStep grid =  let neighbors' = neighbors grid
-                    in S.foldl' (\a b -> S.union a (S.fromList $ neighbors' b)) S.empty
+singleStep grid =  let neighbors'' = neighbors grid
+                    in S.foldl' (\a b -> S.union a (S.fromList $ neighbors'' b)) S.empty
+
+singleStep' :: Grid2D Int -> S.Set Coord2 -> S.Set Coord2
+singleStep' grid =  let neighbors'' = neighbors' grid
+                    in S.foldl' (\a b -> S.union a (S.fromList $ neighbors'' b)) S.empty
 
 find :: Grid2D Int -> Int -> Maybe Coord2
 find grid val = case filter (\(_, e) -> val == e) (A.assocs grid) of
                   ((i, _):_) -> Just i
                   [] -> Nothing
 
+findAll :: Grid2D Int -> Int -> [Coord2]
+findAll grid val = map fst $ filter (\(_, e) -> val == e) (A.assocs grid)
+
 fewestSteps :: Grid2D Int -> Coord2 -> Coord2 -> Int
 fewestSteps grid start end = let g = singleStep grid
                                  vals = iterate g $ S.fromList [start]
-                              --in vals
                               in length $ takeWhile (not . S.member end) vals
+
+fewestSteps' :: Grid2D Int -> Coord2 -> Int -> Int
+fewestSteps' grid start endVal = let g = singleStep' grid
+                                     vals = iterate g $ S.fromList [start]
+                                     f val s = let x = S.map (grid A.!) s
+                                                in S.member val $ x
+                                  in length $ takeWhile (not . f endVal) vals
 
 part1 :: IO ()
 part1 = do
@@ -56,13 +76,21 @@ part1 = do
   case runParser parse2DDigitArray "filename_for_error_message.txt" contents of
       Left e -> putStr (errorBundlePretty e)
       Right g -> do
-                      let start = fromJust $ find g 100
                       let end = fromJust $ find g $ charToHeight 'z' + 1
+                      let start = fromJust $ find g 100
                       print start
                       print end
-                      let a = fewestSteps g start end
-                      print a
-                      return ()
+                      print $ fewestSteps g start end
+
+part2 :: IO ()
+part2 = do
+  contents <- readFile "input.txt"
+  case runParser parse2DDigitArray "filename_for_error_message.txt" contents of
+      Left e -> putStr (errorBundlePretty e)
+      Right g -> do
+                      let start = fromJust $ find g $ charToHeight 'z' + 1
+                      let endVal = charToHeight 'a'
+                      print $ fewestSteps' g start endVal
 
 main :: IO ()
-main = part1
+main = part2
