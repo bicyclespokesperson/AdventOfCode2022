@@ -1,19 +1,49 @@
 module Main where
 
+--See https://github.com/clatisus/advent-of-code-y2022/blob/master/src/Day13.hs for inspiration
+
+import Data.Void (Void)
 import Text.Megaparsec
 import Text.Megaparsec.Char
-import Data.Char (ord)
-import qualified Data.Array as A
-import Data.Void (Void)
-import qualified Data.Set as S
-import Control.Monad (guard)
-import Data.Maybe (fromJust)
+import qualified Text.Megaparsec.Char.Lexer as LL (decimal)
 
+data Packet = S Int | L [Packet] deriving (Show, Eq)
+
+instance Ord Packet where
+  compare :: Packet -> Packet -> Ordering
+  compare (S v) (S v2) = compare v v2
+  compare (L (x:xs)) (L (x2:xs2)) = let res = compare x x2 in if res == EQ then compare xs xs2 else res
+  compare (S v) (L ls) = compare (L [S v]) (L ls)
+  compare (L ls) (S v) = compare (L ls) (L [S v])
+  compare (L []) (L []) = EQ
+  compare (L []) _ = LT
+  compare _ (L []) = GT
+
+type Parser = Parsec Void String
+
+readPacket :: Parser Packet
+readPacket = S <$> LL.decimal <|> L <$> between (char '[') (char ']') (readPacket `sepBy` char ',')
+
+readPacketPair :: Parser (Packet, Packet)
+readPacketPair = (,) <$> (readPacket <* newline) <*> (readPacket <* newline)
+
+readPackets :: Parser [(Packet, Packet)]
+readPackets = readPacketPair `sepBy1` newline
+
+indicesInCorrectOrder :: [(Packet, Packet)] -> [Int]
+indicesInCorrectOrder packets = let f (_, pair) = uncurry (<=) pair
+                                 in map fst $ filter f $ zip [1 ..] packets
 
 part1 :: IO ()
 part1 = do
-  contents <- readFile "sample_input.txt"
-  print $ head contents
+  putStrLn "Starting!"
+  contents <- readFile "input.txt"
+  case runParser readPackets "filename_for_error_message.txt" contents of
+      Left err -> putStr (errorBundlePretty err)
+      Right packets -> do 
+        let indices = indicesInCorrectOrder packets
+        print $ sum indices
+
 
 part2 :: IO ()
 part2 = do
@@ -21,4 +51,4 @@ part2 = do
   print $ head contents
 
 main :: IO ()
-main = part2
+main = part1
