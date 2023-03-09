@@ -2,6 +2,8 @@ module Main where
 
 --See https://github.com/clatisus/advent-of-code-y2022/blob/master/src/Day13.hs for inspiration
 
+import Data.Maybe (fromJust)
+import Data.List (sort, elemIndex)
 import Data.Void (Void)
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -36,7 +38,6 @@ indicesInCorrectOrder packets = let f (_, pair) = uncurry (<=) pair
 
 part1 :: IO ()
 part1 = do
-  putStrLn "Starting!"
   contents <- readFile "input.txt"
   case runParser readPackets "filename_for_error_message.txt" contents of
       Left err -> putStr (errorBundlePretty err)
@@ -47,8 +48,15 @@ part1 = do
 
 part2 :: IO ()
 part2 = do
-  contents <- readFile "sample_input.txt"
-  print $ head contents
+  contents <- readFile "input.txt"
+  case runParser readPackets "filename_for_error_message.txt" contents of
+      Left err -> putStr (errorBundlePretty err)
+      Right packets -> do 
+        let div1 = L [ L [S 2]]
+        let div2 = L [ L [S 6]]
+        let allPackets = sort $ div1 : div2 : concatMap (\(a, b) -> [a, b]) packets
+        --mapM_ print allPackets
+        print $ (fromJust (elemIndex div1 allPackets) + 1) * (fromJust (elemIndex div2 allPackets) + 1)
 
 main :: IO ()
-main = part1
+main = part2
