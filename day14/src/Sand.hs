@@ -10,7 +10,7 @@ import qualified Text.Megaparsec.Char.Lexer as LL (decimal)
 
 type Parser = Parsec Void String
 
-type Grid = S.Set (Int, Int)
+type Cave = S.Set (Int, Int)
 
 readCoordinatePair :: Parser (Int, Int)
 readCoordinatePair = do
@@ -23,40 +23,41 @@ readRocks :: Parser [[(Int, Int)]]
 readRocks = readRock `sepBy` newline
               where readRock = readCoordinatePair `sepBy` string " -> "
 
---addSegment :: Grid -> [(Int, Int)] -> Grid
---addSegment
+addRock :: Cave -> [(Int, Int)] -> Cave
+addRock cave [] = cave
+addRock cave [_] = cave
+addRock cave ((x1, y1):(x2, y2):xs) = let indicesToSet = if x1 == x2 then [(x1, y) | y <- [(min y1 y2)..(max y1 y2)]] else [(x, y1) | x <- [(min x1 x2)..(max x1 x2)]]
+                                          newCave = foldl (flip S.insert) cave indicesToSet
+                                       in addRock newCave ((x2, y2):xs)
 
-addRock :: Grid -> [(Int, Int)] -> Grid
-addRock grid [] = grid
-addRock grid [_] = grid
-addRock grid ((x1, y1):(x2, y2):xs) = let indicesToSet = if x1 == x2 then [(x1, y) | y <- [y1..y2]] else [(x, y1) | x <- [x1..x2]]
-                                          newGrid = foldl (flip S.insert) grid indicesToSet
-                                       in addRock newGrid ((x2, y2):xs)
+dropSand :: Cave -> Int -> (Int, Int) -> (Cave, Bool)
+dropSand cave maxY (x, y)
+  | y > maxY = (cave, False)
+  | not (S.member (x, y+1) cave) = dropSand cave maxY (x, y+1)
+  | not (S.member (x-1, y+1) cave) = dropSand cave maxY (x-1, y+1)
+  | not (S.member (x+1, y+1) cave) = dropSand cave maxY (x+1, y+1)
+  | otherwise = (S.insert (x, y) cave, True)
 
 part1 :: IO ()
 part1 = do
-  contents <- readFile "sample_input.txt"
+  contents <- readFile "input.txt"
   case runParser readRocks "filename_for_error_message.txt" contents of
-      Left err -> putStr (errorBundlePretty err)
-      Right rocks -> do
-                      let grid = foldl addRock S.empty rocks
-                      let charForCoord coord = if S.member coord grid then 'o' else '.'
-                      putStrLn $ unlines [ [ charForCoord (x, y) | x <- [1..100] ] | y <- [1..100] ]
-                      print $ tail rocks
+    Left err -> putStr (errorBundlePretty err)
+    Right rocks -> do
+                      let cave = foldl addRock S.empty rocks
+                      let maxY = S.foldl' (\a b -> max a (snd b)) 0 cave
+
+                      let f cave' startPos = let (cave'', landed) = dropSand cave' maxY startPos 
+                                             in if landed then f cave'' startPos else cave'
+                      
+                      let finalCave = f cave (500, 0)
+
+                      print $ S.size finalCave - S.size cave
 
 part2 :: IO ()
 part2 = do
   contents <- readFile "sample_input.txt"
   print $ head contents
-
-{-
-charForCoord :: (Int, Int) -> Char
-charForCoord (x, y)
-    | x == y = '\\'
-    | x + y == 101 = '/'
-    | x `mod` 10 == 0 || y `mod` 10 == 0 = '+'
-    | otherwise = '-'
-    -}
 
 main :: IO ()
 main = part1
